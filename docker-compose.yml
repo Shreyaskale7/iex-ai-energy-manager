@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: iex-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-iex_rtm}
+      POSTGRES_USER: ${POSTGRES_USER:-iex_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_secure_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iex_user} -d ${POSTGRES_DB:-iex_rtm}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      target: api
+    container_name: iex-api
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-iex_user}:${POSTGRES_PASSWORD:-change_me_secure_password}@postgres:5432/${POSTGRES_DB:-iex_rtm}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./config:/app/config
+      - ./forecasts:/app/forecasts
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn iex_forecast.api.main:app --host 0.0.0.0 --port 8000"
+
+  dashboard:
+    build:
+      context: .
+      target: dashboard
+    container_name: iex-dashboard
+    env_file:
+      - .env
+    environment:
+      FORECAST_API_BASE_URL: http://api:8000
+    ports:
+      - "${STREAMLIT_SERVER_PORT:-8501}:8501"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

@@ -1,0 +1,16 @@
+{
+    "lightgbm": {
+        "n_estimators": 554,
+        "max_depth": 6,
+        "learning_rate": 0.04854915733232892,
+        "subsample": 0.5923300180441009,
+        "colsample_bytree": 0.5970306938284348
+    },
+    "xgboost": {
+        "n_estimators": 455,
+        "max_depth": 8,
+        "learning_rate": 0.04510546162745953,
+        "subsample": 0.9366127474601451,
+        "colsample_bytree": 0.9433255380560244
+    }
+}
